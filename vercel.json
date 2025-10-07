@@ -1,1 +1,3 @@
-{ "framework": "nextjs", "buildCommand": "npm run vercel-build" }
+{
+  "buildCommand": "npm install --legacy-peer-deps && npm run build"
+}
