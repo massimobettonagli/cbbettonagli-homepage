@@ -1,4 +1,4 @@
-import { sanityClient } from ''@/lib/sanity';
+import { sanityClient } from '@/lib/sanity';
 
 export async function GET() {
   try {
