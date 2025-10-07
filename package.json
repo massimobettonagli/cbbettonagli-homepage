@@ -8,10 +8,12 @@
   },
   "dependencies": {
     "@portabletext/types": "^2.0.13",
-    "@sanity/client": "^6.29.0",
     "@prisma/client": "^6.7.0",
+    "@sanity/client": "^6.29.0",
     "framer-motion": "^12.9.2",
+    "lucide-react": "^0.545.0",
     "next": "^14.2.3",
+    "next-auth": "^4.24.11",
     "next-sitemap": "^4.2.3",
     "nodemailer": "^7.0.2"
   },
