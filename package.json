@@ -2,7 +2,6 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "vercel-build": "npm install --legacy-peer-deps && prisma generate && next build",
     "start": "next start",
     "postbuild": "next-sitemap"
   },
