@@ -1,7 +1,7 @@
 // app/api/articoli/[id]/route.ts
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/authOptions';
+import { authOptions } from '../../../../lib/authOptions';
 import { PrismaClient } from '@prisma/client';
 import { writeFile } from 'fs/promises';
 import path from 'path';

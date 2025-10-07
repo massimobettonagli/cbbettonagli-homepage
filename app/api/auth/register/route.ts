@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
-import { sendVerificationEmail } from "@/lib/sendVerificationEmail"; // Lo creeremo
+import { sendVerificationEmail } from '../../../../lib/sendVerificationEmail';
 
 const prisma = new PrismaClient();
 
