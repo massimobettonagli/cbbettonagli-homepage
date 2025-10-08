@@ -6,6 +6,7 @@ import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
 const prisma = new PrismaClient();
 
+// 📄 POST → genera una nuova richiesta e restituisce il PDF
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
@@ -76,18 +77,20 @@ export async function POST(req: Request) {
     y -= 30;
   });
 
-  // 🔧 Conversione compatibile per Response(): usa direttamente Uint8Array
-const pdfBytes = await doc.save();
-const buffer = new Uint8Array(pdfBytes);
+  // ✅ Conversione compatibile per Response(): usa direttamente Uint8Array
+  const pdfBytes = await doc.save();
+  const buffer = new Uint8Array(pdfBytes);
 
-return new Response(buffer, {
-  status: 200,
-  headers: {
-    'Content-Type': 'application/pdf',
-    'Content-Disposition': `inline; filename=richiesta_${numero}_${anno}.pdf`,
-  },
-});
+  return new Response(buffer, {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `inline; filename=richiesta_${numero}_${anno}.pdf`,
+    },
+  });
+} // 👈 QUESTA parentesi mancava prima! 🔥
 
+// 📄 GET → scarica un PDF di richiesta esistente
 export async function GET(req: Request) {
   const url = new URL(req.url || '');
   const id = url.searchParams.get('id');
@@ -131,14 +134,14 @@ export async function GET(req: Request) {
   drawText(`Richiesta n. ${richiesta.numero}/${richiesta.anno}`, 740, 14);
   drawText(`Data: ${richiesta.createdAt.toLocaleDateString()}`, 720, 12);
 
- const pdfBytes = await doc.save();
-const pdfBuffer = Buffer.from(pdfBytes);
+  const pdfBytes = await doc.save();
+  const buffer = new Uint8Array(pdfBytes);
 
-return new Response(pdfBuffer, {
-  status: 200,
-  headers: {
-    'Content-Type': 'application/pdf',
-    'Content-Disposition': `inline; filename=richiesta_${numero}_${anno}.pdf`,
-  },
-});
+  return new Response(buffer, {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `inline; filename=richiesta_${richiesta.numero}_${richiesta.anno}.pdf`,
+    },
+  });
 }
