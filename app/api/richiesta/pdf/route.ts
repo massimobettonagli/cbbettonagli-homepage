@@ -1,5 +1,3 @@
-// app/api/richiesta/pdf/route.ts
-import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { PrismaClient } from '@prisma/client';
@@ -13,7 +11,10 @@ export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Utente non autenticato' }, { status: 401 });
+      return new Response(JSON.stringify({ error: 'Utente non autenticato' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const formData = await req.formData();
@@ -21,20 +22,29 @@ export async function POST(req: Request) {
     const richiesteRaw = formData.get('richieste');
 
     if (!richiesteRaw || typeof richiesteRaw !== 'string') {
-      return NextResponse.json({ error: 'Campo richieste mancante o non valido' }, { status: 400 });
+      return new Response(JSON.stringify({ error: 'Campo richieste mancante o non valido' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     let richieste: { testo: string }[];
     try {
       richieste = JSON.parse(richiesteRaw);
     } catch {
-      return NextResponse.json({ error: 'Formato richieste non valido' }, { status: 400 });
+      return new Response(JSON.stringify({ error: 'Formato richieste non valido' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const user = await prisma.user.findUnique({ where: { email: session.user.email } });
     const shipping = await prisma.shippingAddress.findUnique({ where: { id: indirizzoId } });
     if (!user || !shipping) {
-      return NextResponse.json({ error: 'Utente o indirizzo non trovato' }, { status: 404 });
+      return new Response(JSON.stringify({ error: 'Utente o indirizzo non trovato' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const now = new Date();
@@ -42,18 +52,16 @@ export async function POST(req: Request) {
     const ultimo = await prisma.richiesta.findFirst({ where: { anno }, orderBy: { numero: 'desc' } });
     const numero = (ultimo?.numero || 0) + 1;
 
-    // ✅ Crea la richiesta nel DB
     const richiesta = await prisma.richiesta.create({
       data: {
         numero,
         anno,
         stato: 'INVIATA',
         utente: { connect: { id: user.id } },
-        indirizzoSpedizione: { connect: { id: shipping.id } }
-      }
+        indirizzoSpedizione: { connect: { id: shipping.id } },
+      },
     });
 
-    // ✅ Salva articoli e allegati
     for (let i = 0; i < richieste.length; i++) {
       const r = richieste[i];
       const allegati: { url: string }[] = [];
@@ -72,18 +80,18 @@ export async function POST(req: Request) {
         data: {
           testo: r.testo,
           richiesta: { connect: { id: richiesta.id } },
-          allegati: { create: allegati }
-        }
+          allegati: { create: allegati },
+        },
       });
     }
 
-    // ✅ Generazione PDF multipagina
+    // Generazione PDF multipagina
     const doc = await PDFDocument.create();
     const font = await doc.embedFont(StandardFonts.Helvetica);
     const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
 
     const createPage = () => {
-      const page = doc.addPage([595.28, 841.89]); // A4
+      const page = doc.addPage([595.28, 841.89]);
       const { height } = page.getSize();
 
       const drawText = (text: string, x: number, y: number, size = 11, bold = false) => {
@@ -106,7 +114,6 @@ export async function POST(req: Request) {
     let { page, height, drawText, drawBox } = createPage();
     let y = height - 80;
 
-    // Logo
     try {
       const logoPath = path.join(process.cwd(), 'public/logo-def-no-sfondo.png');
       const logoBytes = await fs.readFile(logoPath);
@@ -114,7 +121,6 @@ export async function POST(req: Request) {
       page.drawImage(logoImage, { x: 40, y: height - 80, width: 80, height: 60 });
     } catch {}
 
-    // Intestazioni
     drawBox(40, height - 200, 250, 90);
     drawText('CB BETTONAGLI SRL', 50, height - 130, 12, true);
     drawText('Via E. Scuri, 16 – 24048 Treviolo (BG)', 50, height - 145);
@@ -137,7 +143,6 @@ export async function POST(req: Request) {
 
     drawText(`Richiesta n. ${numero}/${anno}`, 40, height - 270, 20, true);
 
-    // Tabella
     y = height - 300;
     drawText('Riepilogo richieste', 40, y, 12, true);
     y -= 20;
@@ -151,7 +156,6 @@ export async function POST(req: Request) {
       const r = richieste[i];
       const immagini: PDFImage[] = [];
 
-      // recupero immagini dal formData
       for (const [key, value] of formData.entries()) {
         if (key.startsWith(`file-${i}-`) && value instanceof File) {
           const buffer = Buffer.from(await value.arrayBuffer());
@@ -173,7 +177,6 @@ export async function POST(req: Request) {
       const numRows = Math.ceil(immagini.length / imagesPerRow);
       const boxHeight = Math.max(50, numRows * (imageHeight + imageSpacing) + imageSpacing);
 
-      // se non c’è spazio → nuova pagina
       if (y - boxHeight < 50) {
         ({ page, height, drawText, drawBox } = createPage());
         y = height - 50;
@@ -198,7 +201,12 @@ export async function POST(req: Request) {
     }
 
     const pdfBytes = await doc.save();
-    return new NextResponse(pdfBytes, {
+    const arrayBuffer = pdfBytes.buffer.slice(
+      pdfBytes.byteOffset,
+      pdfBytes.byteOffset + pdfBytes.byteLength
+    );
+
+    return new Response(arrayBuffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
@@ -209,6 +217,9 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     console.error('❌ Errore generazione PDF multipagina:', err);
-    return NextResponse.json({ error: 'Errore interno' }, { status: 500 });
+    return new Response(JSON.stringify({ error: 'Errore interno' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 }
