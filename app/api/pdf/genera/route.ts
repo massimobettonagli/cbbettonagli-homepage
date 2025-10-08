@@ -76,21 +76,17 @@ export async function POST(req: Request) {
     y -= 30;
   });
 
-  // 🔧 Correzione: converte Uint8Array in ArrayBuffer per compatibilità
-  const pdfBytes = await doc.save();
-  const arrayBuffer = pdfBytes.buffer.slice(
-    pdfBytes.byteOffset,
-    pdfBytes.byteOffset + pdfBytes.byteLength
-  );
+  // 🔧 Conversione compatibile per Response(): usa direttamente Uint8Array
+const pdfBytes = await doc.save();
+const buffer = new Uint8Array(pdfBytes);
 
-  return new Response(arrayBuffer.slice(0), {
-    status: 200,
-    headers: {
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `inline; filename=richiesta_${numero}_${anno}.pdf`,
-    },
-  });
-}
+return new Response(buffer, {
+  status: 200,
+  headers: {
+    'Content-Type': 'application/pdf',
+    'Content-Disposition': `inline; filename=richiesta_${numero}_${anno}.pdf`,
+  },
+});
 
 export async function GET(req: Request) {
   const url = new URL(req.url || '');
