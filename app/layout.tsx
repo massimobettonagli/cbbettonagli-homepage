@@ -1,28 +1,29 @@
-// app/layout.tsx
 import './globals.css';
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import "../public/klaro.css";
-import Navbar from "@/components/Navbar";
-import InitSocket from "@/components/InitSocket";
-import Footer from "@/components/Footer";
-import WhatsAppHelp from "@/components/WhatsAppHelp";
-import Script from "next/script";
-import { Providers } from "./providers";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import '../public/klaro.css';
+import Navbar from '@/components/Navbar';
+import InitSocket from '@/components/InitSocket';
+import Footer from '@/components/Footer';
+import WhatsAppHelp from '@/components/WhatsAppHelp';
+import Script from 'next/script';
+import { Providers } from './providers';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  display: "swap",
+  variable: '--font-inter',
+  subsets: ['latin'],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
-  title: "CB Bettonagli | Produzione e vendita tubazioni industriali",
+  title: 'CB Bettonagli | Produzione e vendita tubazioni industriali',
   description:
     "CB Bettonagli è specializzata nella produzione e vendita di tubi idraulici, raccordi e articoli tecnici per l'industria.",
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({
@@ -33,6 +34,8 @@ export default function RootLayout({
   return (
     <html lang="it" className={inter.variable}>
       <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" type="image/x-icon" />
+
         {/* Google Maps Places API */}
         <Script
           src={`https://maps.googleapis.com/maps/api/js?key=AIzaSyDfBWKsc74KzqUIcD6JNZVJ5_8ppTdNaZ4&libraries=places`}
