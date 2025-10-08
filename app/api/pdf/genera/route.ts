@@ -135,17 +135,14 @@ export async function GET(req: Request) {
   drawText(`Richiesta n. ${richiesta.numero}/${richiesta.anno}`, 740, 14);
   drawText(`Data: ${richiesta.createdAt.toLocaleDateString()}`, 720, 12);
 
-  const pdfBytes = await doc.save();
-  const arrayBuffer = pdfBytes.buffer.slice(
-    pdfBytes.byteOffset,
-    pdfBytes.byteOffset + pdfBytes.byteLength
-  );
+ const pdfBytes = await doc.save();
+const pdfBuffer = Buffer.from(pdfBytes);
 
-  return new Response(arrayBuffer, {
-    status: 200,
-    headers: {
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `inline; filename=richiesta_${richiesta.numero}_${richiesta.anno}.pdf`,
-    },
-  });
+return new Response(pdfBuffer, {
+  status: 200,
+  headers: {
+    'Content-Type': 'application/pdf',
+    'Content-Disposition': `inline; filename=richiesta_${numero}_${anno}.pdf`,
+  },
+});
 }
