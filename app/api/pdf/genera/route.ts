@@ -83,7 +83,7 @@ export async function POST(req: Request) {
     pdfBytes.byteOffset + pdfBytes.byteLength
   );
 
-  return new Response(arrayBuffer, {
+  return new Response(arrayBuffer.slice(0), {
     status: 200,
     headers: {
       'Content-Type': 'application/pdf',
