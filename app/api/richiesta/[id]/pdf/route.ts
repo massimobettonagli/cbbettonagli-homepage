@@ -1,5 +1,3 @@
-// app/api/richiesta/[id]/pdf/route.ts
-import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { PDFDocument, rgb, StandardFonts, PDFImage } from 'pdf-lib';
 import fs from 'fs/promises';
@@ -10,6 +8,7 @@ const prisma = new PrismaClient();
 export async function GET(_: Request, { params }: { params: { id: string } }) {
   try {
     const richiestaId = params.id;
+
     const richiesta = await prisma.richiesta.findUnique({
       where: { id: richiestaId },
       include: {
@@ -19,7 +18,9 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
       },
     });
 
-    if (!richiesta) return new NextResponse('Richiesta non trovata', { status: 404 });
+    if (!richiesta) {
+      return new Response('Richiesta non trovata', { status: 404 });
+    }
 
     const doc = await PDFDocument.create();
     const page = doc.addPage([595.28, 841.89]); // A4
@@ -53,13 +54,13 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
 
     const { utente: user, indirizzoSpedizione: shipping, articoli, numero, anno } = richiesta;
 
-    // Riquadro dati azienda
+    // Dati azienda
     drawBox(40, height - 200, 250, 90);
     drawText('CB BETTONAGLI SRL', 50, height - 130, 12, true);
     drawText('Via E. Scuri, 16 – 24048 Treviolo (BG)', 50, height - 145);
     drawText('info@cbbettonagli.it', 50, height - 160);
 
-    // Riquadro cliente
+    // Dati cliente
     drawBox(305, height - 140, 250, 130);
     drawText('Spett.le', 315, height - 30, 12, true);
     drawText(user.companyName || '-', 315, height - 45);
@@ -69,7 +70,7 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
     drawText(`P.IVA: ${user.partitaIva || '-'}`, 315, height - 105);
     drawText(user.billingEmail || '-', 315, height - 120);
 
-    // Riquadro spedizione
+    // Indirizzo di spedizione
     drawBox(305, height - 240, 250, 70);
     drawText('Indirizzo di spedizione:', 315, height - 185, 12, true);
     drawText(`${shipping.label}`, 315, height - 200);
@@ -90,7 +91,7 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
 
     for (let i = 0; i < articoli.length; i++) {
       const r = articoli[i];
-      const immagini: PDFImage[] = []; // ✅ tipizzazione corretta
+      const immagini: PDFImage[] = [];
 
       for (const allegato of r.allegati) {
         try {
@@ -99,7 +100,7 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
           const image = allegato.url.toLowerCase().endsWith('.png')
             ? await doc.embedPng(imageBytes)
             : await doc.embedJpg(imageBytes);
-          immagini.push(image); // ✅ ora funziona
+          immagini.push(image);
         } catch (err) {
           console.warn('Errore con immagine:', allegato.url);
         }
@@ -133,15 +134,18 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
     }
 
     const pdfBytes = await doc.save();
-    return new NextResponse(pdfBytes, {
+    const buffer = new Uint8Array(pdfBytes);
+
+    return new Response(buffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `inline; filename=richiesta_${numero}_${anno}.pdf`,
       },
     });
+
   } catch (err) {
     console.error('❌ Errore generazione PDF:', err);
-    return new NextResponse('Errore interno del server', { status: 500 });
+    return new Response('Errore interno del server', { status: 500 });
   }
 }
