@@ -202,19 +202,23 @@ export async function POST(req: Request) {
 
     const pdfBytes = await doc.save();
     const arrayBuffer = pdfBytes.buffer.slice(
-      pdfBytes.byteOffset,
-      pdfBytes.byteOffset + pdfBytes.byteLength
-    );
+  pdfBytes.byteOffset,
+  pdfBytes.byteOffset + pdfBytes.byteLength
+);
 
-    return new Response(arrayBuffer, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `inline; filename=richiesta_${numero}_${anno}.pdf`,
-        'X-Richiesta-Numero': numero.toString(),
-        'X-Richiesta-Anno': anno.toString(),
-      },
-    });
+// ✅ Converte in Uint8Array → Buffer → ArrayBuffer, per compatibilità totale
+const safeBuffer = new Uint8Array(arrayBuffer);
+const fixedBuffer = Buffer.from(safeBuffer);
+
+return new Response(fixedBuffer, {
+  status: 200,
+  headers: {
+    'Content-Type': 'application/pdf',
+    'Content-Disposition': `inline; filename=richiesta_${numero}_${anno}.pdf`,
+    'X-Richiesta-Numero': numero.toString(),
+    'X-Richiesta-Anno': anno.toString(),
+  },
+});
   } catch (err) {
     console.error('❌ Errore generazione PDF multipagina:', err);
     return new Response(JSON.stringify({ error: 'Errore interno' }), {
