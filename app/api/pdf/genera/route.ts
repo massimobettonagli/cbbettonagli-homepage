@@ -76,9 +76,14 @@ export async function POST(req: Request) {
     y -= 30;
   });
 
+  // 🔧 Correzione: converte Uint8Array in ArrayBuffer per compatibilità
   const pdfBytes = await doc.save();
+  const arrayBuffer = pdfBytes.buffer.slice(
+    pdfBytes.byteOffset,
+    pdfBytes.byteOffset + pdfBytes.byteLength
+  );
 
-  return new Response(pdfBytes, {
+  return new Response(arrayBuffer, {
     status: 200,
     headers: {
       'Content-Type': 'application/pdf',
@@ -131,8 +136,12 @@ export async function GET(req: Request) {
   drawText(`Data: ${richiesta.createdAt.toLocaleDateString()}`, 720, 12);
 
   const pdfBytes = await doc.save();
+  const arrayBuffer = pdfBytes.buffer.slice(
+    pdfBytes.byteOffset,
+    pdfBytes.byteOffset + pdfBytes.byteLength
+  );
 
-  return new Response(pdfBytes, {
+  return new Response(arrayBuffer, {
     status: 200,
     headers: {
       'Content-Type': 'application/pdf',
