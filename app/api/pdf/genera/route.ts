@@ -1,8 +1,7 @@
 // app/api/pdf/genera/route.ts
-import { NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
-import { PrismaClient } from '@prisma/client';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
 const prisma = new PrismaClient();
@@ -10,41 +9,43 @@ const prisma = new PrismaClient();
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
-    return NextResponse.json({ error: 'Utente non autenticato' }, { status: 401 });
+    return new Response(JSON.stringify({ error: 'Utente non autenticato' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   const { richieste, indirizzo } = await req.json();
   const now = new Date();
   const anno = now.getFullYear();
 
-  // Trova l'utente autenticato
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
   });
   if (!user) {
-    return NextResponse.json({ error: 'Utente non trovato' }, { status: 404 });
+    return new Response(JSON.stringify({ error: 'Utente non trovato' }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
-  // Recupera l'ultimo numero progressivo
   const ultimo = await prisma.richiesta.findFirst({
     where: { anno },
     orderBy: { numero: 'desc' },
   });
   const numero = (ultimo?.numero || 0) + 1;
 
-  // ✅ Crea la richiesta nel DB con utenteId e indirizzoId
   const nuovaRichiesta = await prisma.richiesta.create({
     data: {
       numero,
       anno,
       utenteId: user.id,
-      indirizzoId: indirizzo.id, // 👈 importante passare l'id dall'oggetto ricevuto
+      indirizzoId: indirizzo.id,
     },
   });
 
-  // Genera il PDF
   const doc = await PDFDocument.create();
-  const page = doc.addPage([595.28, 841.89]); // formato A4
+  const page = doc.addPage([595.28, 841.89]); // A4
   const font = await doc.embedFont(StandardFonts.Helvetica);
 
   const drawText = (text: string, y: number, size = 12) => {
@@ -60,7 +61,6 @@ export async function POST(req: Request) {
   drawText(`CB Bettonagli Srl`, 800);
   drawText(`Via E. Scuri, 16 – 24048 Treviolo (BG)`, 785);
   drawText(`info@cbbettonagli.it`, 770);
-
   drawText(`Richiesta n. ${numero}/${anno}`, 740, 14);
 
   drawText(`Destinatario:`, 710, 13);
@@ -78,7 +78,7 @@ export async function POST(req: Request) {
 
   const pdfBytes = await doc.save();
 
-  return new NextResponse(pdfBytes, {
+  return new Response(pdfBytes, {
     status: 200,
     headers: {
       'Content-Type': 'application/pdf',
@@ -87,13 +87,15 @@ export async function POST(req: Request) {
   });
 }
 
-// ✅ GET per scaricare un PDF già salvato
 export async function GET(req: Request) {
   const url = new URL(req.url || '');
   const id = url.searchParams.get('id');
 
   if (!id) {
-    return NextResponse.json({ error: 'ID mancante' }, { status: 400 });
+    return new Response(JSON.stringify({ error: 'ID mancante' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   const richiesta = await prisma.richiesta.findUnique({
@@ -101,7 +103,10 @@ export async function GET(req: Request) {
   });
 
   if (!richiesta) {
-    return NextResponse.json({ error: 'Richiesta non trovata' }, { status: 404 });
+    return new Response(JSON.stringify({ error: 'Richiesta non trovata' }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   const doc = await PDFDocument.create();
@@ -127,7 +132,7 @@ export async function GET(req: Request) {
 
   const pdfBytes = await doc.save();
 
-  return new NextResponse(pdfBytes, {
+  return new Response(pdfBytes, {
     status: 200,
     headers: {
       'Content-Type': 'application/pdf',
