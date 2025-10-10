@@ -22,8 +22,8 @@ export const metadata: Metadata = {
   description:
     "CB Bettonagli è specializzata nella produzione e vendita di tubi idraulici, raccordi e articoli tecnici per l'industria.",
   icons: {
-  icon: "/favicon-v2.ico",
-},
+    icon: '/favicon-v2.ico', // <-- favicon personalizzata
+  },
 };
 
 export default function RootLayout({
@@ -33,18 +33,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="it" className={inter.variable}>
-      <head>
-        <link rel="icon" href="/favicon-v2.ico" type="image/x-icon" />
-	<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-	<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-
-        {/* Google Maps Places API */}
+      <body className="antialiased">
+        {/* Script in <body> per evitare conflitti con App Router */}
         <Script
           src={`https://maps.googleapis.com/maps/api/js?key=AIzaSyDfBWKsc74KzqUIcD6JNZVJ5_8ppTdNaZ4&libraries=places`}
           strategy="beforeInteractive"
         />
-
-        {/* Klaro + Google Analytics */}
         <Script src="/klaro-config.js" strategy="beforeInteractive" />
         <Script src="/klaro.js" strategy="beforeInteractive" />
         <Script
@@ -61,8 +55,7 @@ export default function RootLayout({
             });
           `}
         </Script>
-      </head>
-      <body className="antialiased">
+
         <Providers>
           <Navbar />
           <InitSocket />
