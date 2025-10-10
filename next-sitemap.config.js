@@ -1,10 +1,19 @@
 /** @type {import('next-sitemap').IConfig} */
+
+// Se vuoi gestire esclusioni anche da variabile d'ambiente, lo gestiamo qui:
+const excludePaths = process.env.NEXT_PUBLIC_SITEMAP_EXCLUDE?.split(',') || ['/test'];
+
 module.exports = {
-  siteUrl: 'https://www.cbbettonagli.it',
+  siteUrl: process.env.NEXT_PUBLIC_SITE_URL || 'https://www.cbbettonagli.it',
   generateRobotsTxt: true, // genera anche robots.txt
   sitemapSize: 5000,
   changefreq: 'weekly',
   priority: 0.7,
-  exclude: ['/test'], // se hai pagine da escludere
+  exclude: excludePaths, // esclude percorsi specifici o da env
+  robotsTxtOptions: {
+    policies: [
+      { userAgent: '*', allow: '/' },
+      { userAgent: '*', disallow: excludePaths },
+    ],
+  },
 };
-console.log("🔍 NEXT_PUBLIC_SITEMAP_EXCLUDE:", process.env.NEXT_PUBLIC_SITEMAP_EXCLUDE);
