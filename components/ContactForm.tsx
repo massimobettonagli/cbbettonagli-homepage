@@ -3,12 +3,15 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-// ✅ Definizione globale di grecaptcha
+// ✅ reCAPTCHA typings
 declare global {
   interface Window {
     grecaptcha?: {
       ready: (cb: () => void) => void;
-      execute: (siteKey: string, options: { action: string }) => Promise<string>;
+      execute: (
+        siteKey: string,
+        options: { action: string }
+      ) => Promise<string>;
     };
   }
 }
@@ -23,6 +26,7 @@ export function ContactForm() {
     privacyAccepted: false,
   });
   const [loading, setLoading] = useState(false);
+  const [captchaError, setCaptchaError] = useState("");
 
   useEffect(() => {
     if (searchParams?.get("success") === "true") {
@@ -42,45 +46,61 @@ export function ContactForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setCaptchaError("");
+
     if (!formState.privacyAccepted) {
       alert("Per favore accetta la privacy policy.");
+      return;
+    }
+
+    if (typeof window === "undefined" || !window.grecaptcha) {
+      setCaptchaError("reCAPTCHA non è ancora pronto. Riprova tra qualche secondo.");
       return;
     }
 
     setLoading(true);
 
     try {
-      if (typeof window === "undefined" || !window.grecaptcha) {
-        alert("reCAPTCHA non è ancora pronto. Riprova tra qualche secondo.");
-        setLoading(false);
-        return;
-      }
-
       window.grecaptcha.ready(async () => {
-        try {
-          const token = await window.grecaptcha!.execute(
-            process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "", // ✅ usa .env
-            { action: "submit" }
-          );
+  const token = await window.grecaptcha!.execute(
+    process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "",
+    { action: "submit" }
+  );
 
-          const res = await fetch("/api/contact", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ...formState, token }),
-          });
+  // 🔍 Opzionale: testare il punteggio lato client (per debugging)
+  const debugScore = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: `secret=${process.env.NEXT_PUBLIC_RECAPTCHA_DEBUG_SECRET}&response=${token}`,
+  });
 
-          if (res.ok) {
-            window.location.href = "/contatti?success=true";
-          } else {
-            alert("Errore durante l'invio del messaggio.");
-          }
-        } catch (error) {
-          console.error("Errore reCAPTCHA:", error);
-          alert("Errore durante la verifica reCAPTCHA.");
-        } finally {
-          setLoading(false);
-        }
-      });
+  const debugData = await debugScore.json();
+  console.log("🎯 reCAPTCHA score:", debugData?.score);
+  // console.log("🧪 reCAPTCHA raw response:", debugData);
+
+  // Prosegui con invio del form
+  const res = await fetch("/api/contact", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...formState, token }),
+  });
+
+  if (res.status === 403) {
+    setCaptchaError("Verifica reCAPTCHA fallita. Riprova più tardi.");
+    setLoading(false);
+    return;
+  }
+
+  if (!res.ok) {
+    alert("Errore durante l'invio del messaggio.");
+    setLoading(false);
+    return;
+  }
+
+  window.location.href = "/contatti?success=true";
+});
     } catch (error) {
       console.error("Errore invio:", error);
       alert("Errore imprevisto.");
@@ -97,32 +117,19 @@ export function ContactForm() {
       <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-md">
         {submitted && (
           <div className="mb-6 flex items-center justify-center gap-3 text-green-700 bg-green-100 border border-green-300 rounded p-4 text-sm">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6 text-green-600 animate-bounce"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-            <span>
-              Messaggio inviato con successo! Ti risponderemo al più presto.
-            </span>
+            ✅ Messaggio inviato con successo! Ti risponderemo al più presto.
+          </div>
+        )}
+
+        {captchaError && (
+          <div className="mb-4 text-red-600 font-medium text-sm">
+            ⚠ {captchaError}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label
-              htmlFor="name"
-              className="block text-sm font-semibold mb-2 text-gray-700"
-            >
+            <label htmlFor="name" className="block text-sm font-semibold mb-2 text-gray-700">
               Nome e Cognome
             </label>
             <input
@@ -137,10 +144,7 @@ export function ContactForm() {
           </div>
 
           <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-semibold mb-2 text-gray-700"
-            >
+            <label htmlFor="email" className="block text-sm font-semibold mb-2 text-gray-700">
               Email
             </label>
             <input
@@ -155,10 +159,7 @@ export function ContactForm() {
           </div>
 
           <div>
-            <label
-              htmlFor="message"
-              className="block text-sm font-semibold mb-2 text-gray-700"
-            >
+            <label htmlFor="message" className="block text-sm font-semibold mb-2 text-gray-700">
               Messaggio
             </label>
             <textarea

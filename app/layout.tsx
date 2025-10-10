@@ -22,7 +22,9 @@ export const metadata: Metadata = {
   description:
     "CB Bettonagli è specializzata nella produzione e vendita di tubi idraulici, raccordi e articoli tecnici per l'industria.",
   icons: {
-    icon: '/favicon-v3.ico', // <-- favicon personalizzata
+    icon: '/favicon-v3.ico',
+    apple: '/apple-touch-icon.png',
+    shortcut: '/favicon-v3.ico',
   },
 };
 
@@ -33,14 +35,25 @@ export default function RootLayout({
 }) {
   return (
     <html lang="it" className={inter.variable}>
+      <head>
+        {/* reCAPTCHA Enterprise */}
+        <Script
+          src="https://www.google.com/recaptcha/enterprise.js?render=6LfgTikrAAAAADLXObRQwWjdcIJYj15ApTM4HqmZ"
+          strategy="beforeInteractive"
+        />
+      </head>
       <body className="antialiased">
-        {/* Script in <body> per evitare conflitti con App Router */}
+        {/* Google Maps API */}
         <Script
           src={`https://maps.googleapis.com/maps/api/js?key=AIzaSyDfBWKsc74KzqUIcD6JNZVJ5_8ppTdNaZ4&libraries=places`}
           strategy="beforeInteractive"
         />
+
+        {/* Klaro Consent Manager */}
         <Script src="/klaro-config.js" strategy="beforeInteractive" />
         <Script src="/klaro.js" strategy="beforeInteractive" />
+
+        {/* Google Analytics */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-0C4Q5M9LT6"
           strategy="afterInteractive"
