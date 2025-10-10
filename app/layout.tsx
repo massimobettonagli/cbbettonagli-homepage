@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   description:
     "CB Bettonagli è specializzata nella produzione e vendita di tubi idraulici, raccordi e articoli tecnici per l'industria.",
   icons: {
-    icon: '/favicon-v2.ico', // <-- favicon personalizzata
+    icon: '/favicon-v3.ico', // <-- favicon personalizzata
   },
 };
 
