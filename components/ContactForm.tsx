@@ -101,11 +101,11 @@ export function ContactForm() {
 
   window.location.href = "/contatti?success=true";
 });
-    } catch (error) {
-      console.error("Errore invio:", error);
-      alert("Errore imprevisto.");
-      setLoading(false);
-    }
+    } catch (error: any) {
+  console.error("❌ ERRORE nel blocco principale:", error.message || error);
+  alert("Errore imprevisto.");
+  setLoading(false);
+}
   };
 
   return (
